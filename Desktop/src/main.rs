@@ -21,7 +21,7 @@ use ipc::handle_ipc_message;
 const DEV_SERVER_URL: &str = "http://localhost:5173";
 
 #[cfg(not(debug_assertions))]
-const INDEX_HTML: &str = include_str!("../www/Distribution/index.html");
+const INDEX_HTML: &str = include_str!("../../Distribution/index.html");
 
 struct WgpuState {
     instance: Instance,
