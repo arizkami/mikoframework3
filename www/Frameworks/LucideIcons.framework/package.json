@@ -1,0 +1,78 @@
+{
+  "name": "lucide-miko",
+  "description": "A Lucide icon library package for MikoJS framework applications.",
+  "version": "1.0.0",
+  "license": "ISC",
+  "homepage": "https://lucide.dev",
+  "bugs": "https://github.com/lucide-icons/lucide/issues",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lucide-icons/lucide.git",
+    "directory": "packages/lucide-miko"
+  },
+  "keywords": [
+    "Lucide",
+    "MikoJS",
+    "Feather",
+    "Icons",
+    "Icon",
+    "SVG",
+    "Feather Icons",
+    "TypeScript",
+    "Framework"
+  ],
+  "author": "MikoJS Framework",
+  "main": "dist/cjs/lucide-miko.js",
+  "module": "dist/esm/lucide-miko.js",
+  "unpkg": "dist/umd/lucide-miko.min.js",
+  "typings": "dist/lucide-miko.d.ts",
+  "sideEffects": false,
+  "files": [
+    "dist",
+    "src",
+    "Generated",
+    "Wrapper",
+    "Resources"
+  ],
+  "scripts": {
+    "build": "bun run clean && bun run copy:license && bun run build:icons && bun run typecheck && bun run build:bundles",
+    "copy:license": "cp ../../LICENSE ./LICENSE",
+    "clean": "rm -rf dist && rm -rf Generated && rm -rf ./src/icons/*.ts",
+    "build:icons": "node -r ts-node/register codegen.ts",
+    "build:bundles": "rollup -c ./rollup.config.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "bun run build:icons && vitest run",
+    "test:watch": "vitest watch",
+    "dev": "bun run build:icons && bun run typecheck",
+    "generate": "bun run build:icons",
+    "version": "bun version --git-tag-version=false"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "rollup": "^4.0.0",
+    "rollup-plugin-dts": "^6.0.0",
+    "rollup-plugin-typescript2": "^0.36.0",
+    "ts-node": "^10.9.0",
+    "typescript": "^5.0.0",
+    "vitest": "^1.0.0"
+  },
+  "dependencies": {},
+  "peerDependencies": {},
+  "exports": {
+    ".": {
+      "import": "./dist/esm/lucide-miko.js",
+      "require": "./dist/cjs/lucide-miko.js",
+      "types": "./dist/lucide-miko.d.ts"
+    },
+    "./Generated": {
+      "import": "./Generated/index.js",
+      "require": "./Generated/index.js",
+      "types": "./Generated/index.d.ts"
+    },
+    "./Wrapper": {
+      "import": "./Wrapper/index.js",
+      "require": "./Wrapper/index.js",
+      "types": "./Wrapper/index.d.ts"
+    }
+  }
+}

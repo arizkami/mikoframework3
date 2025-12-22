@@ -1,14 +1,26 @@
 // MikoJS - Enhanced Web Framework
-// Main entry point with declarative UI builder pattern
+// Main entry point with declarative UI builder pattern and SVG support
 
-// Core exports (excluding createElement from element to avoid conflict with parser)
-export { ElementBuilder } from './core/element';
+// Core exports (including enhanced SVG support)
+export { ElementBuilder, SVGBuilder } from './core/element';
 export type { MikoProps, MikoNode } from './core/element';
 export * from './core/component';
 export * from './core/state';
 export * from './core/events';
 export * from './core/lifecycle';
 export * from './utils';
+
+// Enhanced element creation with SVG support
+export { 
+  createElement, 
+  createSVGElement, 
+  svg, 
+  path, 
+  circle, 
+  rect, 
+  line, 
+  group 
+} from './core/element';
 
 // Parser exports
 export { jsx, jsxs, Fragment, JSXParser, transformJSX } from './parser/jsx';
@@ -21,12 +33,12 @@ export { Component, createComponent } from './core/component';
 export { globalEvents, EventBus } from './core/events';
 export { query, queryAll, mount, unmount } from './utils/dom';
 
-// Declarative UI Builder (backward compatibility)
-import { createElement } from './core/element';
+// Declarative UI Builder (backward compatibility with SVG support)
+import { createElement, createSVGElement, svg } from './core/element';
 import type { MikoProps } from './core/element';
 
 export class UI {
-  private element: HTMLElement;
+  private element: HTMLElement | SVGElement;
 
   constructor(tag: string = 'div', className?: string, props?: MikoProps) {
     const elementProps: MikoProps = { ...props };
@@ -37,7 +49,7 @@ export class UI {
   }
 
   // Add child elements
-  add(child: HTMLElement | string): UI {
+  add(child: HTMLElement | SVGElement | string): UI {
     if (typeof child === 'string') {
       this.element.appendChild(document.createTextNode(child));
     } else {
@@ -133,8 +145,46 @@ export class UI {
     return this;
   }
 
+  // Add SVG element
+  svg(props?: MikoProps): UI {
+    const svgEl = svg(props);
+    this.element.appendChild(svgEl);
+    return this;
+  }
+
+  // Add icon (SVG-based)
+  icon(iconData: { 
+    viewBox?: string; 
+    paths: string[]; 
+    size?: number; 
+    color?: string; 
+    className?: string 
+  }): UI {
+    const { viewBox = '0 0 24 24', paths, size = 24, color = 'currentColor', className = '' } = iconData;
+    
+    const svgEl = svg({
+      width: size,
+      height: size,
+      viewBox,
+      fill: 'none',
+      stroke: color,
+      strokeWidth: 2,
+      strokeLinecap: 'round',
+      strokeLinejoin: 'round',
+      className: `inline-block ${className}`.trim()
+    });
+
+    paths.forEach(pathData => {
+      const pathEl = createSVGElement('path', { d: pathData });
+      svgEl.appendChild(pathEl);
+    });
+
+    this.element.appendChild(svgEl);
+    return this;
+  }
+
   // Build the final element
-  build(): HTMLElement {
+  build(): HTMLElement | SVGElement {
     return this.element;
   }
 }
@@ -150,6 +200,30 @@ export function center(className: string = 'max-w-4xl mx-auto text-center'): UI 
 
 export function panel(className: string = 'bg-white/10 backdrop-blur-sm rounded-xl p-6 mb-8 border border-white/20'): UI {
   return new UI('div', className);
+}
+
+// SVG helper functions
+export function svgContainer(props?: MikoProps): SVGElement {
+  return svg(props);
+}
+
+export function createIcon(paths: string[], props?: MikoProps): SVGElement {
+  const svgEl = svg({
+    viewBox: '0 0 24 24',
+    fill: 'none',
+    stroke: 'currentColor',
+    strokeWidth: 2,
+    strokeLinecap: 'round',
+    strokeLinejoin: 'round',
+    ...props
+  });
+
+  paths.forEach(pathData => {
+    const pathEl = createSVGElement('path', { d: pathData });
+    svgEl.appendChild(pathEl);
+  });
+
+  return svgEl;
 }
 
 // Framework version

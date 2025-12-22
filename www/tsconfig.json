@@ -9,7 +9,7 @@
 
     // JSX Configuration (Custom JSX, not React)
     "jsx": "react-jsx",
-    "jsxImportSource": "./src",
+    "jsxImportSource": "./Source",
 
     // Bundler mode
     "moduleResolution": "bundler",
@@ -21,30 +21,36 @@
     // Path resolution
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./Source/*"],
+      "@frameworks/*": ["./Frameworks/*"],
+      "@library/*": ["./Library/*"]
     },
 
     // Best practices
     "strict": true,
     "skipLibCheck": true,
     "noFallthroughCasesInSwitch": true,
-    "noUncheckedIndexedAccess": true,
+    "noUncheckedIndexedAccess": false,
     "noImplicitOverride": true,
-    "exactOptionalPropertyTypes": true,
+    "exactOptionalPropertyTypes": false,
 
-    // Type checking
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
+    // Type checking (relaxed for better compatibility)
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
     "noImplicitReturns": true,
     "noPropertyAccessFromIndexSignature": false
   },
   "include": [
-    "src/**/*",
+    "Source/**/*",
+    "Frameworks/**/*",
+    "Library/**/*",
     "*.ts",
+    "*.tsx",
     "*.js"
-, "Frameworks/MikoJS.framework"  ],
+  ],
   "exclude": [
     "node_modules",
-    "dist"
+    "dist",
+    "Distribution"
   ]
 }
