@@ -4,7 +4,7 @@ import {
   MikoIconBuilder, 
   createMikoIcon, 
   mikoAnimations 
-} from '../../Library/MikoSVG.ext';
+} from '../../Library/Core/MikoSVG.ext';
 
 // SVG Test Component showcasing comprehensive SVG support
 function SVGTest() {
