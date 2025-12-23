@@ -3,6 +3,14 @@ name = "testapp"
 version = "0.1.0"
 edition = "2021"
 
+[[bin]]
+name = "testapp"
+path = "src/main.rs"
+
+[[bin]]
+name = "minimal"
+path = "src/minimal.rs"
+
 [dependencies]
 wry = "0.53"
 winit = "0.30"

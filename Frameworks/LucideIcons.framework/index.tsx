@@ -16,7 +16,7 @@ export {
   IconGallery,
   iconRegistry,
   iconNames,
-  iconStats,
+  getIconStats,
   getIcon,
   hasIcon,
   searchIcons,
@@ -25,11 +25,12 @@ export {
   type LucideIconProps,
   type IconPickerProps,
   type IconGalleryProps,
-  type IconComponent
+  type IconComponent,
+  type IconStats
 } from './Wrapper';
 
 // Generated exports (lazy-loaded)
-export type { IconComponent, IconStats } from './Generated';
+export type { IconComponent as GeneratedIconComponent } from './Generated';
 
 // Framework metadata
 export const LucideIconsFramework = {

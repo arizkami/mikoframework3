@@ -9,6 +9,7 @@ export interface MikoProps {
   // SVG-specific props
   xmlns?: string;
   viewBox?: string;
+  preserveAspectRatio?: string; // Critical for stretching behavior (e.g., "none")
   fill?: string;
   stroke?: string;
   strokeWidth?: string | number;
@@ -48,6 +49,45 @@ const SVG_TAGS = new Set([
   'tspan', 'textPath', 'animate', 'animateTransform', 'animateMotion'
 ]);
 
+// Attributes that MUST remain camelCase in SVG (Browser ignores kebab-case for these)
+const SVG_CASE_SENSITIVE_ATTRS = new Set([
+  'viewBox',
+  'preserveAspectRatio',
+  'gradientUnits',
+  'gradientTransform',
+  'patternUnits',
+  'patternContentUnits',
+  'markerWidth',
+  'markerHeight',
+  'refX',
+  'refY',
+  'maskUnits',
+  'maskContentUnits',
+  'textLength',
+  'startOffset',
+  'surfaceScale',
+  'specularConstant',
+  'specularExponent',
+  'diffuseConstant',
+  'kernelMatrix',
+  'baseFrequency',
+  'numOctaves',
+  'limitingConeAngle',
+  'pointsAtX',
+  'pointsAtY',
+  'pointsAtZ',
+  'tableValues',
+  'attributeName',
+  'attributeType',
+  'repeatCount',
+  'repeatDur',
+  'keyTimes',
+  'keySplines',
+  'keyPoints',
+  'requiredExtensions',
+  'systemLanguage'
+]);
+
 export class ElementBuilder {
   private element: HTMLElement | SVGElement;
   private isSVG: boolean;
@@ -84,8 +124,18 @@ export class ElementBuilder {
       } else if (key === 'style' && typeof value === 'object') {
         Object.assign((this.element as any).style, value);
       } else if (value !== null && value !== undefined) {
-        // Convert camelCase to kebab-case for SVG attributes
-        const attrName = this.isSVG ? this.camelToKebab(key) : key;
+        // Handle SVG attributes
+        let attrName = key;
+        
+        if (this.isSVG) {
+          // If the attribute is NOT in the whitelist, convert to kebab-case.
+          // e.g. 'strokeWidth' -> 'stroke-width' (Correct)
+          // e.g. 'preserveAspectRatio' -> 'preserveAspectRatio' (Correct, prevented conversion)
+          if (!SVG_CASE_SENSITIVE_ATTRS.has(key)) {
+             attrName = this.camelToKebab(key);
+          }
+        }
+        
         this.element.setAttribute(attrName, String(value));
       }
     }
@@ -162,6 +212,12 @@ export class SVGBuilder {
   // Common SVG operations
   viewBox(x: number, y: number, width: number, height: number): SVGBuilder {
     this.element.setAttribute('viewBox', `${x} ${y} ${width} ${height}`);
+    return this;
+  }
+
+  // Set scaling behavior. Pass 'none' to stretch.
+  preserveAspectRatio(value: string): SVGBuilder {
+    this.element.setAttribute('preserveAspectRatio', value);
     return this;
   }
 

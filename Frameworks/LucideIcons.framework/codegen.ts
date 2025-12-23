@@ -97,18 +97,23 @@ export const ${componentName} = {
   // Render function for MikoJS
   render(props: { size?: number | string; color?: string; className?: string; style?: any } = {}) {
     const { size = 24, color = 'currentColor', className = '', style = {} } = props;
+    const strokeWidth = style.strokeWidth || 2;
+    
+    // If size is a string (like Tailwind class), set width/height to 1em for relative sizing
+    const sizeValue = typeof size === 'string' ? '1em' : size;
     
     return {
       tag: 'svg',
       attributes: {
-        width: size,
-        height: size,
+        width: sizeValue,
+        height: sizeValue,
         viewBox: this.viewBox,
         fill: 'none',
         stroke: color,
-        'stroke-width': '2',
+        'stroke-width': strokeWidth,
         'stroke-linecap': 'round',
         'stroke-linejoin': 'round',
+        'preserveAspectRatio': 'xMidYMid meet',
         class: \`lucide lucide-\${this.name} \${className}\`.trim(),
         style: typeof style === 'object' ? Object.entries(style).map(([k, v]) => \`\${k}: \${v}\`).join('; ') : style
       },

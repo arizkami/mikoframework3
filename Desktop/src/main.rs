@@ -1,4 +1,4 @@
-#![windows_subsystem = "windows"]
+// #![windows_subsystem = "windows"]
 use wry::WebViewBuilder;
 use winit::{
     event::WindowEvent,
@@ -21,7 +21,7 @@ use ipc::handle_ipc_message;
 const DEV_SERVER_URL: &str = "http://localhost:5173";
 
 #[cfg(not(debug_assertions))]
-const INDEX_HTML: &str = include_str!("../../Distribution/index.html");
+const INDEX_HTML_BYTES: &[u8] = include_bytes!("../../Distribution/index.html");
 
 struct WgpuState {
     instance: Instance,
@@ -89,6 +89,7 @@ struct App {
     state: SharedAppState,
     wgpu_state: Option<WgpuState>,
     initialization_complete: bool,
+    ready_to_show: bool,
 }
 
 impl App {
@@ -99,6 +100,7 @@ impl App {
             state: core::create_shared_state(),
             wgpu_state: None,
             initialization_complete: false,
+            ready_to_show: false,
         }
     }
     
@@ -123,16 +125,19 @@ impl ApplicationHandler for App {
         if self.window.is_none() && !self.initialization_complete {
             println!("Starting initialization...");
             
-            // Create window but keep it hidden initially
+            // Create window but keep it hidden until everything is ready
             let window_attributes = Window::default_attributes()
-                .with_title("WGPU + Wry App - Initializing...")
+                .with_title("Workspace")
                 .with_inner_size(LogicalSize::new(1000, 700))
-                .with_visible(false); // Hide window during initialization
+                .with_visible(false); // Keep hidden during preload
             
             let window = Arc::new(event_loop.create_window(window_attributes).unwrap());
             self.window = Some(window.clone());
             
-            // Start async initialization
+            // Create WebView2 immediately (but window stays hidden)
+            self.create_webview(&window);
+            
+            // Clone for async initialization
             let state_clone = self.state.clone();
             let window_clone = window.clone();
             
@@ -158,9 +163,6 @@ impl ApplicationHandler for App {
                         }
                     }
                     
-                    // Small delay to simulate WebView2 initialization
-                    std::thread::sleep(std::time::Duration::from_millis(500));
-                    
                     // Mark WebView2 as initialized
                     {
                         let mut state = state_clone.lock().unwrap();
@@ -168,17 +170,30 @@ impl ApplicationHandler for App {
                         state.message = "All systems ready!".to_string();
                     }
                     
-                    println!("All initialization complete, showing window");
+                    println!("All initialization complete");
                     
-                    // Show the window now that everything is ready
+                    // Small delay to ensure everything is settled
+                    std::thread::sleep(std::time::Duration::from_millis(100));
+                    
+                    // Now show the window
+                    println!("Showing window");
                     window_clone.set_visible(true);
-                    window_clone.set_title("Workspace");
                 });
             });
             
-            // Create WebView2 immediately but window stays hidden
-            self.create_webview(&window);
             self.initialization_complete = true;
+        }
+        
+        // Check if we need to navigate to the main app
+        if self.ready_to_show && self.webview.is_some() {
+            #[cfg(not(debug_assertions))]
+            {
+                println!("Loading main application...");
+                if let Some(webview) = &self.webview {
+                    let _ = webview.load_url("miko://app//");
+                }
+            }
+            self.ready_to_show = false;
         }
     }
 
@@ -216,7 +231,30 @@ impl App {
 
         #[cfg(not(debug_assertions))]
         {
-            webview_builder = webview_builder.with_html(INDEX_HTML);
+            // Use custom protocol to serve embedded HTML
+            // This avoids issues with large embedded content in with_html()
+            use std::borrow::Cow;
+            
+            webview_builder = webview_builder.with_custom_protocol("miko".into(), move |_webview, request| {
+                let uri = request.uri();
+                
+                // Serve the main HTML file
+                if uri == "miko://app//" || uri == "miko://app//index.html" {
+                    return http::Response::builder()
+                        .header("Content-Type", "text/html")
+                        .body(Cow::Borrowed(INDEX_HTML_BYTES))
+                        .unwrap();
+                }
+                
+                // Return 404 for other requests
+                http::Response::builder()
+                    .status(404)
+                    .body(Cow::Borrowed(&[] as &[u8]))
+                    .unwrap()
+            });
+            
+            // Navigate to the app immediately - window will stay hidden until WGPU is ready
+            webview_builder = webview_builder.with_url("miko://app//");
         }
 
         // Add initialization script to disable WebView2 context menu
@@ -293,8 +331,18 @@ impl App {
                 // Handle other IPC messages
                 handle_ipc_message(request, state_clone.clone());
             })
-            .build(&window)
-            .unwrap();
+            .build(&**window)
+            .map_err(|e| {
+                eprintln!("WebView creation error: {:?}", e);
+                #[cfg(windows)]
+                {
+                    use std::env;
+                    eprintln!("WEBVIEW2_BROWSER_EXECUTABLE_FOLDER: {:?}", env::var("WEBVIEW2_BROWSER_EXECUTABLE_FOLDER"));
+                    eprintln!("WEBVIEW2_USER_DATA_FOLDER: {:?}", env::var("WEBVIEW2_USER_DATA_FOLDER"));
+                }
+                e
+            })
+            .expect("Failed to create WebView");
 
         self.webview = Some(webview);
         println!("WebView2 created with Win32 context menu support");
